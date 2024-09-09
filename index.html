@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LightWeight Player 04</title>
+    <link href="https://unpkg.com/video.js/dist/video-js.css" rel="stylesheet">
+    <script src="https://unpkg.com/video.js/dist/video.js"></script>
+    <script src="https://unpkg.com/@videojs/http-streaming/dist/videojs-http-streaming.js"></script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2L8GDRM676"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-2L8GDRM676');
+    </script>
+    <style>
+        /* Base reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: #1b1b1b;
+            color: white;
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            background-color: #2c2c2c;
+            overflow: hidden;
+        }
+
+        .video-container {
+            width: 100%;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            position: relative;
+        }
+
+        .video-js {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .channel-guide {
+            flex: 1;
+            background-color: #222;
+            color: #fff;
+            padding: 10px;
+            overflow-y: auto;
+            border-top: 1px solid #444;
+        }
+
+        .channel-guide h2 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+            color: #ff9900;
+        }
+
+        .channel-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .channel-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            background-color: #333;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-align: center;
+        }
+
+        .channel-item:hover {
+            background-color: #ff9900;
+            color: #000;
+        }
+
+        .channel-item img {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 5px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #444;
+        }
+
+        .channel-item span {
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        /* Scrollbar styling */
+        .channel-guide::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .channel-guide::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 10px;
+        }
+
+        .channel-guide::-webkit-scrollbar-thumb:hover {
+            background: #ff9900;
+        }
+
+        /* Footer styles */
+        .footer {
+            background-color: #1a1a1a;
+            color: #fff;
+            padding: 10px 0;
+            text-align: center;
+        }
+
+        .footer marquee {
+            font-size: 14px;
+        }
+
+        /* Media Queries for Responsive Design */
+        @media (min-width: 768px) {
+            .container {
+                flex-direction: row;
+            }
+
+            .video-container {
+                flex: 2;
+                padding-top: 0;
+                height: calc(100vh - 40px); /* Adjust for footer height */
+            }
+
+            .channel-guide {
+                flex: 1;
+                border-left: 1px solid #444;
+                border-top: none;
+                max-height: calc(100vh - 40px); /* Adjust for footer height */
+            }
+
+            .channel-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .channel-item {
+                flex-direction: row;
+                justify-content: flex-start;
+                text-align: left;
+            }
+
+            .channel-item img {
+                width: 50px;
+                height: 50px;
+                margin-right: 15px;
+                margin-bottom: 0;
+            }
+
+            .channel-item span {
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="video-container">
+            <video id="lw-player-04" class="video-js vjs-default-skin" controls preload="auto" autoplay muted poster="https://ui.dmpcdn.com/tvbox-web-cdn/imgs/social/premier-league.jpg" data-setup='{}'>
+                <source id="video-source" src="https://live444.xyz/stream/71/index.m3u8" type="application/x-mpegURL">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+        <div class="channel-guide" id="channel-guide">
+            <h2>Channel Guide</h2>
+            <div class="channel-grid" id="channel-grid">
+                <!-- Channel items will be inserted here dynamically -->
+            </div>
+        </div>
+    </div>
+    <footer class="footer">
+        <marquee behavior="scroll" direction="left">
+            Welcome to GKTV This app is built for educational purposes only. All links and data are shared and hosted by third-party applications. If anything goes against the law or needs removal - Enjoy your favorite channels and stay tuned for more updates!
+        </marquee>
+    </footer>
+
+    <script>
+        var player = videojs('lw-player-04');
+        var videoSourceElement = document.getElementById('video-source');
+
+        var channels = [
+            { name: 'Laliga', url: 'https://drjpy7suzu4c5.cloudfront.net/out/v1/0c06db0274c04e64ab6ae0450f5fbda8/index.m3u8', logo: 'https://cdn.cookielaw.org/logos/f99d5762-5a8e-4e1e-b9e9-e5c54ec8ea01/e8656d4c-a096-4422-8d3d-afa2db7d5869/a2ff04ec-25ed-4e09-a1b8-c1fa71c9f911/RGB_Logotipo_LALIGA_PLUS_coral.png' },
+            { name: 'true-premier-hd1', url: 'https://media.wacthstream.com/stream_live/600_eng1./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113134033true-premier-hd1.png' },
+{ name: 'true-premier-hd2', url: 'https://media.wacthstream.com/stream_live/602_eng2/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113134015true-premier-hd2.png' },
+{ name: 'true-premier-hd3', url: 'https://media.wacthstream.com/stream_live/603_eng3./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113133956true-premier-hd3.png' },
+{ name: 'true-premier-hd4', url: 'https://media.wacthstream.com/stream_live/604_eng4/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113133902true-premier-hd4.png' },
+{ name: 'true-premier-hd5', url: 'https://media.wacthstream.com/stream_live/604_eng5/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113133840true-premier-hd5.png' },
+{ name: 'TRUE-SPORT-1', url: 'https://media.wacthstream.com/stream_live/666_Ts_HD1/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113135630true-sport-1.png' },
+{ name: 'TRUE-SPORT2', url: 'https://media.wacthstream.com/stream_live/667_Ts_HD2/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/20240501232314true-sport-2.png' },
+{ name: 'TRUE-SPORT-3', url: 'https://media.wacthstream.com/stream_live/668_Ts_HD3./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113135430true-sport-3.png' },
+{ name: 'TRUE-SPORT-4', url: 'https://media.wacthstream.com/stream_live/669_Ts_HD4/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113135253true-sport-4.png' },
+{ name: 'TRUE-SPORT-5', url: 'https://media.wacthstream.com/stream_live/684_TSP5/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113135220true-sport-5.png' },
+{ name: 'Channel 83', url: 'https://media.wacthstream.com/stream_live/686_TSP7/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113135145true-sport-7.png' },
+{ name: 'TRUE-Bein1', url: 'https://media.wacthstream.com/stream_live/607_BEIN1/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113134914bein1.png' },
+{ name: 'TRUE-Bein3', url: 'https://live444.xyz/cloud/stream/642ae5d4604a4b5c88a9a19294b14d74/8/index.m3u8', logo: 'https://dookeela.live/uploads/1663980670.png' },
+{ name: 'TRUE-Tennis', url: 'https://media.wacthstream.com/stream_live/670_Tennis/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113133753tennis.png' },
+{ name: 'TRUE-Golf2', url: 'https://media.wacthstream.com/stream_live/676_golfplus/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220623152914golf2.jpg' },
+        { name: 'NBT 2 HD', url: 'https://media.wacthstream.com/stream_live/002_NBT./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/sm/20220113030901nbt.png' },
+{ name: 'TPBS', url: 'https://media.wacthstream.com/stream_live/003_TPBS./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113030822tpbs.png' },
+{ name: 'CH5 HD', url: 'https://media.wacthstream.com/stream_live/005_5hd/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/sm/202201130307375hd.png' },
+{ name: 'Parliament', url: 'https://livestream.parliament.go.th/lives/playlist.m3u8', logo: 'https://49-231-37-237-rewriter.ais-vidnt.com/ais/play/origin/LIVE//channelicon/0048.png' },
+{ name: 'TNN', url: 'https://media.wacthstream.com/stream_live/016_tnn/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/sm/20220113030713tnn.png' },
+{ name: 'JKN 18', url: 'https://media.wacthstream.com/stream_live/topnews/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://49-231-37-237-rewriter.ais-vidnt.com/ais/play/origin/LIVE//channelicon/JKN18.png' },
+{ name: 'Nation TV', url: 'https://media.wacthstream.com/stream_live/022_Nation./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://49-231-37-237-rewriter.ais-vidnt.com/ais/play/origin/LIVE/channelicon/0021.png' },
+{ name: 'Workpoint TV', url: 'https://media.wacthstream.com/stream_live/023_workpoint/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113030612workpoint.png' },
+{ name: 'True 4 U', url: 'https://media.wacthstream.com/stream_live/024_true4u/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113030543true4u.png' },
+{ name: 'GMM25', url: 'https://media.wacthstream.com/stream_live/025_Gmm25/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113030458gmm25.png' },
+{ name: 'CH8', url: 'https://media.wacthstream.com/stream_live/027_ch8./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113030159ch8.png' },
+{ name: 'MONO', url: 'https://media.wacthstream.com/stream_live/029_MONO./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113030140mono.png' },
+{ name: 'MCOT HD', url: 'https://media.wacthstream.com/stream_live/030_mcothd/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113030108mcothd.png' },
+{ name: 'ONE 31 HD', url: 'https://media.wacthstream.com/stream_live/031_ONEHD/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113025900onehd.png' },
+{ name: 'Thairath TV HD', url: 'https://media.wacthstream.com/stream_live/032_thairath/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113025637thairath.png' },
+{ name: '3 HD', url: 'https://media.wacthstream.com/stream_live/033_3hd/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/202201130256053hd.png' },
+{ name: 'AmarinTV HD', url: 'https://media.wacthstream.com/stream_live/034_amarin./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113025543amarin.png' },
+{ name: 'CH7 HD', url: 'https://media.wacthstream.com/stream_live/035_7HD/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/202201130254257hd.png' },
+{ name: 'PPTV HD', url: 'https://media.wacthstream.com/stream_live/036_pptv/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113025505pptv.png' },
+{ name: 'Channel 20', url: '', logo: 'https://api-soccer.thai-play.com/images/tv/default_logo.png' },
+{ name: 'HBOTH', url: 'https://media.wacthstream.com/stream_live/3BB_HBO/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/sm/20220113193214hbo.png' },
+{ name: 'Film 1', url: 'https://media.wacthstream.com/stream_live/222_True_Film_HD/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20240325190653true_film_hd2.jfif' },
+{ name: 'TRUE Series', url: 'https://media.wacthstream.com/stream_live/240_True_Series./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20230707224707true_series.png' },
+{ name: 'KMTV', url: 'https://media.wacthstream.com/stream_live/347_KMTV/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20231214211508kmtv.png' },
+{ name: 'HBO Signature', url: 'https://media.wacthstream.com/stream_live/3BB_HBOsignature/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20231222084329hbo-signature.png' },
+{ name: 'HBO Hits', url: 'https://media.wacthstream.com/stream_live/3BB_HBOhits/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/hbo-hits.png' },
+{ name: 'CCM', url: 'https://media.wacthstream.com/stream_live/233_CCM/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/ccm.png' },
+{ name: 'TRUE MOVIE', url: 'https://media.wacthstream.com/stream_live/224_MovieHit./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113135705moviehit.png' },
+{ name: 'Warner', url: 'https://media.wacthstream.com/stream_live/228_warner/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220301173818warner.webp' },
+{ name: 'TRUE Film Asian', url: 'https://media.wacthstream.com/stream_live/237_TrueFilmAsia./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113194454truefilmasia.png' },
+{ name: 'THAIFILM', url: 'https://media.wacthstream.com/stream_live/236_TrueThaiFilmHD./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/sm/20220301180736truethaifilmhd.png' },
+{ name: 'Asianmorg', url: 'https://media.wacthstream.com/stream_live/239_AsianMore/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113194747asianmore.png' },
+{ name: 'True Gem', url: 'https://media.wacthstream.com/stream_live/244_GEM/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113194213gem.png' },
+{ name: 'KBS', url: 'https://media.wacthstream.com/stream_live/245_KBS./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113194145kbs.png' },
+{ name: 'TrueInsideHD', url: 'https://media.wacthstream.com/stream_live/335_TrueInsideHD/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20231217000637realityhd.png' },
+{ name: 'Xzyte', url: 'https://media.wacthstream.com/stream_live/340_Xzyte/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113193717xzyte.png' },
+{ name: 'Rock Action', url: 'https://media.wacthstream.com/stream_live/338_Rock_Extreme/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20231217000227rock-action.jpg' },
+{ name: 'Rock Entertainment', url: 'https://media.wacthstream.com/stream_live/337_Rock_Entertainment/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113193855rock-entertainment.png' },
+{ name: 'Axn', url: 'https://media.wacthstream.com/stream_live/336_AXN/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113193958axn.png' },
+{ name: 'food network', url: 'https://media.wacthstream.com/stream_live/342_Food_Network/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113193652food-network.png' },
+{ name: 'BBC LIFESTYLE', url: 'https://media.wacthstream.com/stream_live/353_BBC_Life_Style/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20231215000836bbc-life-style.png' },
+{ name: 'AFN', url: 'https://media.wacthstream.com/stream_live/356_AFN/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20240426231635afn.png' },
+{ name: 'Cinemax', url: 'https://media.wacthstream.com/stream_live/3BB_CINEMAX./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113193245cinemax.png' },
+{ name: 'BBC NEWS', url: 'https://media.wacthstream.com/stream_live/780_BBC/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/sm/bbc.png' },
+{ name: 'CNN', url: 'https://media.wacthstream.com/stream_live/778_CNN/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113190510cnn.png' },
+{ name: 'Ajazeera', url: 'https://media.wacthstream.com/stream_live/789_ajazeera/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/20240325190829aljazeera.png' },
+{ name: 'NHK', url: 'https://media.wacthstream.com/stream_live/793_NHKWORLD/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9NS8xOS8yMDI0IDc6NDY6NDIgUE0maGFzaF92YWx1ZT1xcVcyS3h6cU1xeFVFR3dUb3JjUHFBPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfMjMxOTU=', logo: 'https://wacth.officebk.co/uploads/tv_image/nhk-world-tv.png' },
+{ name: 'TLC', url: 'https://media.wacthstream.com/stream_live/566_TLC/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113192658tlc.png' },
+{ name: 'Love4k', url: 'https://media.wacthstream.com/stream_live/563_Love_Nature/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220301173645love-nature.png' },
+{ name: 'WILD', url: 'https://media.wacthstream.com/stream_live/559_ExploreWild/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220301173633explorewild.jpg' },
+{ name: 'Discovery TH', url: 'https://media.wacthstream.com/stream_live/562_Discovery/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/discovery-grlw1m9qfxgc.png' },
+{ name: 'SCI', url: 'https://media.wacthstream.com/stream_live/561_TRUE_EXPLORE_SCI/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220623153313true_explore_sci.jpg' },
+{ name: 'BBCERTH', url: 'https://media.wacthstream.com/stream_live/568_BBC_Earth/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113192540bbc-earth.png' },
+{ name: '555_Discovery_Asia', url: 'https://media.wacthstream.com/stream_live/555_Discovery_Asia/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/sm/20220113193055discovery-asia.png' },
+{ name: 'Crime', url: 'https://media.wacthstream.com/stream_live/557_H2/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/crimeinvestigation.png' },
+{ name: 'History', url: 'https://media.wacthstream.com/stream_live/556_History/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113193025history.png' },
+{ name: '449_Carton_Netwrk', url: 'https://media.wacthstream.com/stream_live/449_Carton_Netwrk/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/sm/20220113193118carton-network.png' },
+{ name: '448_DreamWork', url: 'https://media.wacthstream.com/stream_live/448_DreamWorks/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/sm/20240323155019dreamworks.jpg' },
+{ name: '445_Spark', url: 'https://media.wacthstream.com/stream_live/445_SparkJump/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://images.livebox.co/images/tv/png/sd-sparkplay.png' },
+{ name: 'KhongDee', url: 'https://media.wacthstream.com/stream_live/goodtv37_KhongDee./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://i.ibb.co/Pg7dBL9/ddd.png' },
+{ name: 'Busaba', url: 'https://media.wacthstream.com/stream_live/38_Busaba./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://i.ibb.co/7SRycDD/bbb.png' },
+{ name: 'JustFun', url: 'https://media.wacthstream.com/stream_live/goodtv39_JustFun./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://i.ibb.co/dsNNJ3L/Justfun.png' },
+{ name: 'Thainess', url: 'https://media.wacthstream.com/stream_live/goodtv40_ThaiNess./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113190044thainess.png' },
+{ name: 'Sweet', url: 'https://media.wacthstream.com/stream_live/goodtv42_Sweet./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://i.ibb.co/tXr6CPL/sweet.png' },
+{ name: 'Heart', url: 'https://media.wacthstream.com/stream_live/goodtv43_Heart./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://i.ibb.co/qYHStJ0/heart.png' },
+{ name: 'Hero', url: 'https://media.wacthstream.com/stream_live/goodtv44_Hero./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://i.ibb.co/S3LPy31/Hero.png' },
+{ name: 'Sumlojlok', url: 'https://media.wacthstream.com/stream_live/goodtv55_Sumlojlok./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://i.ibb.co/Pm84NSc/goodtv.jpg' },
+{ name: 'AnimalShow', url: 'https://media.wacthstream.com/stream_live/goodtv56_AnimalShow./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://i.ibb.co/T018CMK/animal.jpg' },
+{ name: 'BXcite', url: 'https://media.wacthstream.com/stream_live/goodtv57_BXcite./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://i.ibb.co/0ZXqLCb/bxcite.png' },
+{ name: 'MYSCI', url: 'https://media.wacthstream.com/stream_live/goodtv58_MYSci./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://wacth.officebk.co/uploads/tv_image/20220113185546mysci.png' },
+{ name: 'NewExplorer', url: 'https://media.wacthstream.com/stream_live/goodtv59_New_Explorer./playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://i.ibb.co/NZB9D3z/newexplore.png' },
+{ name: 'nextKids', url: 'https://media.wacthstream.com/stream_live/goodtv66_NextKid2/playlist.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8xOC8yMDI0IDg6MTY6MjkgUE0maGFzaF92YWx1ZT1UQVdzUS9CdDhPY3ZjZndWWUkrYnZnPT0mdmFsaWRtaW51dGVzPTg2NDAwMDAwJnN0cm1fbGVuPTAmaWQ9Y2hfNTgzMjE=', logo: 'https://i.ibb.co/GC2XbHr/nextKids.jpg' },
+            // Add more channels as needed
+        ];
+
+        function changeChannel(url, channelName) {
+            // Send event to Google Analytics using sendBeacon
+            var eventParams = {
+                'event_category': 'Channel',
+                'event_label': channelName,
+                'value': 1
+            };
+            
+            var data = new URLSearchParams({
+                v: '2',
+                tid: 'G-2L8GDRM676',
+                cid: '1780438508.1721190141', // Should dynamically set per user/session
+                t: 'event',
+                ec: eventParams.event_category,
+                ea: 'channel_click',
+                el: eventParams.event_label,
+                ev: eventParams.value.toString()
+            });
+
+            if (navigator.sendBeacon) {
+                navigator.sendBeacon('https://www.google-analytics.com/collect', data);
+            } else {
+                fetch('https://www.google-analytics.com/collect', {
+                    method: 'POST',
+                    body: data
+                });
+            }
+
+            // Change the video source and update videoSource for tracking
+            videoSourceElement.src = url;
+            player.src({ type: 'application/x-mpegURL', src: url });
+            player.play();
+        }
+
+        function loadChannels() {
+            var channelGrid = document.getElementById('channel-grid');
+            channels.forEach(function(channel) {
+                var channelItem = document.createElement('div');
+                channelItem.className = 'channel-item';
+                channelItem.onclick = function() {
+                    changeChannel(channel.url, channel.name);
+                };
+
+                var channelImage = document.createElement('img');
+                channelImage.src = channel.logo;
+                channelImage.alt = channel.name + ' Logo';
+
+                var channelName = document.createElement('span');
+                channelName.textContent = channel.name;
+
+                channelItem.appendChild(channelImage);
+                channelItem.appendChild(channelName);
+                channelGrid.appendChild(channelItem);
+            });
+        }
+
+        // Load channels when the page loads
+        window.onload = loadChannels;
+
+        // Workaround for autoplay policies in modern browsers
+        player.ready(function() {
+            var promise = player.play();
+            if (promise !== undefined) {
+                promise.then(function() {
+                    // Autoplay started
+                }).catch(function(error) {
+                    // Autoplay was prevented.
+                    // Show a UI element to let the user manually start playback.
+                });
+            }
+
+            // Tracking playback events
+            player.on('play', function() {
+                gtag('event', 'video_play', {
+                    'event_category': 'Video',
+                    'event_label': videoSourceElement.src,
+                    'value': 1
+                });
+            });
+
+            player.on('pause', function() {
+                gtag('event', 'video_pause', {
+                    'event_category': 'Video',
+                    'event_label': videoSourceElement.src,
+                    'value': 1
+                });
+            });
+
+            player.on('ended', function() {
+                gtag('event', 'video_end', {
+                    'event_category': 'Video',
+                    'event_label': videoSourceElement.src,
+                    'value': 1
+                });
+            });
+
+            // Tracking watch time at intervals (10 seconds)
+            var watchTime = 0;
+            var lastTimeUpdate = 0;
+            player.on('timeupdate', function() {
+                var currentTime = player.currentTime();
+                if (currentTime - lastTimeUpdate >= 10) {
+                    watchTime += currentTime - lastTimeUpdate;
+                    lastTimeUpdate = currentTime;
+                }
+            });
+
+            player.on('ended', function() {
+                gtag('event', 'video_watch_time', {
+                    'event_category': 'Video',
+                    'event_label': videoSourceElement.src,
+                    'value': watchTime
+                });
+            });
+        });
+    </script>
+</body>
+</html>
